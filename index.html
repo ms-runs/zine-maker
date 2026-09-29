@@ -1,0 +1,1154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Zine Maker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+html,body{margin:0;padding:0;background:#ffffff;}
+:root{
+    --ink:#ffffff;
+    --ink-soft:#f4f4f2;
+    --text:#101010;
+    --paper:#f4f3f0;
+    --paper-dim:#e5e3dd;
+    --accent:#7c8797;
+    --accent-soft:#aeb6c0;
+    --grey:#6e6e6e;
+    --grease:#b5432e;
+    --line: rgba(16,16,16,0.12);
+    --radius: 1px;
+    --font-ui: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+    --font-heading: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  }#zm-app *{box-sizing:border-box;}#zm-app{margin:0;padding:0;}#zm-app{
+    background:var(--ink);
+    color:var(--text);
+    font-family:var(--font-ui);
+    min-height:100vh;
+    -webkit-font-smoothing:antialiased;
+  }#zm-app .mono{ font-family:var(--font-ui); letter-spacing:0.14em; text-transform:lowercase; font-weight:500; }#zm-app h1, #zm-app h2, #zm-app h3{ font-family:var(--font-heading); font-weight:400; margin:0; letter-spacing:0.01em; }#zm-app button{ font-family:var(--font-ui); cursor:pointer; }#zm-app ::selection{ background:var(--accent); color:var(--ink); }#zm-app .topbar{
+    position:sticky; top:0; z-index:40;
+    display:flex; align-items:center; justify-content:space-between;
+    padding:18px 28px;
+    background:linear-gradient(var(--ink) 80%, transparent);
+    border-bottom:1px solid var(--line);
+  }#zm-app .brand{ display:flex; align-items:baseline; gap:10px; }#zm-app .brand h1{ font-size:22px; letter-spacing:0.01em; }#zm-app .brand .mono{ font-size:10px; color:var(--accent-soft); text-transform:uppercase; letter-spacing:0.14em; }#zm-app .topbar-actions{ display:flex; gap:10px; align-items:center; }#zm-app .save-status{ font-size:11px; color:var(--grey); margin-right:4px; white-space:nowrap; }#zm-app .btn{
+    border:1px solid var(--line);
+    background:transparent;
+    color:var(--text);
+    padding:9px 16px;
+    border-radius:var(--radius);
+    font-size:13px;
+    font-weight:600;
+    letter-spacing:0.01em;
+    transition:border-color .15s, background .15s, color .15s;
+  }#zm-app .btn:hover{ border-color:var(--accent-soft); }#zm-app .btn-primary{ background:var(--accent); border-color:var(--accent); color:var(--ink); }#zm-app .btn-primary:hover{ background:var(--accent-soft); border-color:var(--accent-soft); }#zm-app .btn-ghost{ border-color:transparent; color:var(--grey); }#zm-app .btn-ghost:hover{ color:var(--text); border-color:var(--line); }#zm-app .btn-danger{ color:var(--grease); border-color:transparent; }#zm-app .btn-danger:hover{ border-color:var(--grease); }#zm-app .btn:disabled{ opacity:0.35; cursor:not-allowed; }#zm-app main{ max-width:1180px; margin:0 auto; padding:0 28px 80px; }#zm-app .zm-notice{
+    margin:22px 0 0; padding:12px 14px; font-size:12.5px; line-height:1.55;
+    background:var(--ink-soft); border:1px solid var(--line); border-left:3px solid var(--accent); border-radius:var(--radius);
+  }#zm-app .zm-notice strong{ font-weight:600; }#zm-app .zm-notice.warn{ border-left-color:var(--grease); }#zm-app .gallery-controls{
+    display:flex; flex-wrap:wrap; gap:14px; align-items:center;
+    padding:24px 0 20px; border-bottom:1px solid var(--line); margin-bottom:28px;
+  }#zm-app .gallery-controls input[type=text]{
+    background:var(--ink-soft); border:1px solid var(--line); color:var(--text);
+    padding:9px 12px; border-radius:var(--radius); font-family:var(--font-ui); font-size:13px;
+    flex:1 1 200px; min-width:160px;
+  }#zm-app .gallery-controls select{
+    background:var(--ink-soft); border:1px solid var(--line); color:var(--text);
+    padding:9px 12px; border-radius:var(--radius); font-size:13px;
+  }#zm-app .gallery-count{ color:var(--grey); font-size:12px; margin-left:auto; }#zm-app .grid{ display:grid; grid-template-columns:repeat(auto-fill, minmax(220px,1fr)); gap:22px; }#zm-app .card{
+    background:var(--ink-soft); border:1px solid var(--line); border-radius:var(--radius);
+    overflow:hidden; cursor:pointer; transition:border-color .15s, transform .15s;
+  }#zm-app .card:hover{ border-color:var(--accent-soft); transform:translateY(-2px); }#zm-app .card-thumb{ aspect-ratio:1.294; background:var(--paper-dim) center/cover no-repeat; position:relative; }#zm-app .card-thumb.empty{ display:flex; align-items:center; justify-content:center; color:var(--grey); font-size:11px; }#zm-app .card-body{ padding:12px 14px 14px; }#zm-app .card-title{ font-size:15px; margin-bottom:3px; }#zm-app .card-meta{ font-size:11px; color:var(--grey); }#zm-app .empty-state{ text-align:center; padding:80px 20px; color:var(--grey); }#zm-app .empty-state h2{ color:var(--text); font-size:20px; margin-bottom:8px; }#zm-app .empty-state p{ font-size:13px; max-width:360px; margin:0 auto 20px; line-height:1.5; }#zm-app .editor-header{ display:flex; flex-wrap:wrap; gap:16px 24px; padding:24px 0; border-bottom:1px solid var(--line); margin-bottom:24px; }#zm-app .field{ display:flex; flex-direction:column; gap:5px; }#zm-app .field label{ font-size:10px; text-transform:uppercase; letter-spacing:0.1em; color:var(--grey); }#zm-app .field input, #zm-app .field textarea{
+    background:var(--ink-soft); border:1px solid var(--line); color:var(--text);
+    padding:8px 10px; border-radius:var(--radius); font-family:var(--font-ui); font-size:13px;
+  }#zm-app .field textarea{ resize:vertical; min-height:38px; }#zm-app .field.grow{ flex:1 1 220px; }#zm-app .paper-toggle{ display:flex; border:1px solid var(--line); border-radius:var(--radius); overflow:hidden; width:fit-content; }#zm-app .paper-toggle button{ background:transparent; border:none; color:var(--grey); padding:8px 16px; font-size:12px; font-weight:600; }#zm-app .paper-toggle button.active{ background:var(--accent); color:var(--ink); }#zm-app .tray-wrap{ margin-bottom:30px; }#zm-app .tray-label{ display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }#zm-app .tray-label .mono{ font-size:10px; color:var(--accent-soft); text-transform:uppercase; letter-spacing:0.12em; }#zm-app .filmstrip{
+    display:flex; gap:10px; padding:14px 10px; overflow-x:auto;
+    background:var(--ink-soft); border-top:1px solid var(--line); border-bottom:1px solid var(--line); position:relative;
+  }#zm-app .tray-thumb{
+    flex:0 0 auto; width:78px; height:78px; background:#000 center/cover no-repeat;
+    border-radius:2px; cursor:grab; border:1px solid var(--line); position:relative;
+  }#zm-app .tray-thumb.used{ opacity:0.3; }#zm-app .tray-thumb .badge{ position:absolute; bottom:3px; right:3px; font-size:9px; background:rgba(20,19,15,0.7); color:#fff; padding:1px 4px; border-radius:2px; }#zm-app .tray-empty{ color:var(--grey); font-size:12px; padding:14px; }#zm-app .board-section{ margin-bottom:34px; }#zm-app .board-label{ display:flex; align-items:center; gap:10px; margin-bottom:12px; }#zm-app .board-label .mono{ font-size:10px; color:var(--grey); text-transform:uppercase; letter-spacing:0.12em; }#zm-app .board-label .rule{ flex:1; height:1px; background:var(--line); }#zm-app .board{
+    background:var(--paper); aspect-ratio:1.294; display:grid;
+    grid-template-columns:repeat(4,1fr); grid-template-rows:repeat(2,1fr);
+    gap:2px; padding:2px; position:relative; border-radius:1px;
+  }#zm-app .board.a4{ aspect-ratio:1.414; }#zm-app .board::after{ content:''; position:absolute; top:0; bottom:0; left:50%; width:0; border-left:1px dashed rgba(20,19,15,0.35); pointer-events:none; }#zm-app .cell{
+    background:var(--paper-dim); position:relative; overflow:hidden;
+    display:flex; align-items:center; justify-content:center; cursor:pointer; border:1px solid transparent;
+  }#zm-app .cell.selected{ border-color:var(--grease); z-index:2; }#zm-app .cell.dragover{ border-color:var(--accent); background:#d4d2ca; }#zm-app .cell.spanned{ grid-column:span 2; }#zm-app .cell.glue{
+    cursor:default;
+    background:repeating-linear-gradient(45deg, var(--paper-dim) 0 6px, #d8d0ba 6px 12px);
+  }#zm-app .cell .cell-no{ position:absolute; top:4px; left:5px; font-size:8px; color:rgba(20,19,15,0.45); z-index:3; letter-spacing:0.03em; text-transform:uppercase; }#zm-app .cell .placeholder{ color:rgba(20,19,15,0.32); font-size:10px; text-align:center; padding:6px; line-height:1.4; }#zm-app .cell-drag-handle{
+    position:absolute; top:4px; right:4px; z-index:5; width:20px; height:18px;
+    display:flex; align-items:center; justify-content:center;
+    background:rgba(13,13,12,0.6); border-radius:2px; cursor:grab; font-size:11px; color:#fff;
+    line-height:1;
+  }#zm-app .cell-drag-handle:active{ cursor:grabbing; }#zm-app .cell-photo-wrap{ position:absolute; overflow:hidden; touch-action:none; }#zm-app .pan-layer{ position:absolute; inset:0; }#zm-app .pan-layer img{ position:absolute; top:50%; left:50%; max-width:none; user-select:none; -webkit-user-drag:none; }#zm-app .cell .tag{
+    position:absolute; bottom:4px; right:5px; font-size:8px; z-index:3;
+    background:rgba(20,19,15,0.55); color:#fff; padding:1px 4px; border-radius:2px; letter-spacing:0.06em; text-transform:uppercase;
+  }#zm-app .inspector{
+    background:var(--ink-soft); border:1px solid var(--line); border-radius:var(--radius);
+    padding:16px 18px; margin-bottom:30px; display:flex; flex-wrap:wrap; gap:20px; align-items:center;
+  }#zm-app .inspector .empty{ color:var(--grey); font-size:12px; }#zm-app .inspector-group{ display:flex; flex-direction:column; gap:6px; }#zm-app .inspector-group label{ font-size:10px; text-transform:uppercase; letter-spacing:0.08em; color:var(--grey); }#zm-app .inspector-row{ display:flex; gap:8px; align-items:center; }#zm-app input[type=range]{ accent-color:var(--accent); width:120px; }#zm-app .toggle{ display:flex; align-items:center; gap:8px; font-size:12px; color:var(--text); user-select:none; }#zm-app .toggle input{ accent-color:var(--accent); width:15px; height:15px; }#zm-app .icon-btn{
+    width:36px; height:30px; border-radius:var(--radius); border:1px solid var(--line);
+    background:transparent; color:var(--text); font-size:15px;
+    display:inline-flex; align-items:center; justify-content:center; white-space:nowrap; line-height:1; padding:0;
+  }#zm-app .icon-btn:hover{ border-color:var(--accent-soft); }#zm-app .editor-footer{ display:flex; gap:10px; justify-content:flex-end; padding-top:10px; border-top:1px solid var(--line); }#zm-app .hint{ font-size:11px; color:var(--grey); line-height:1.6; margin-top:10px; }#zm-app .modal-backdrop{
+    position:fixed; inset:0; background:rgba(10,9,7,0.82); z-index:100;
+    display:flex; align-items:center; justify-content:center; padding:24px;
+  }#zm-app .modal{
+    background:var(--ink); border:1px solid var(--line); border-radius:3px;
+    width:min(720px,100%); max-height:90vh; overflow:auto; padding:26px 26px 22px;
+  }#zm-app .modal-head{ display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:6px; }#zm-app .modal-head h2{ font-size:22px; }#zm-app .modal-meta{ color:var(--grey); font-size:12px; margin-bottom:18px; }#zm-app .modal-desc{ font-size:13px; line-height:1.6; color:var(--text); margin-bottom:20px; opacity:0.85; }#zm-app .modal-page{
+    background:var(--paper); aspect-ratio:1.294; display:grid;
+    grid-template-columns:repeat(4,1fr); grid-template-rows:repeat(2,1fr);
+    gap:2px; padding:2px; margin-bottom:14px; border-radius:1px; position:relative;
+  }#zm-app .modal-page.a4{ aspect-ratio:1.414; }#zm-app .modal-cell{ background:var(--paper-dim); position:relative; overflow:hidden; }#zm-app .modal-cell.spanned{ grid-column:span 2; }#zm-app .modal-side-label{ font-size:10px; text-transform:uppercase; letter-spacing:0.1em; color:var(--grey); margin-bottom:8px; }#zm-app .modal-actions{ display:flex; gap:10px; justify-content:flex-end; margin-top:16px; flex-wrap:wrap; }#zm-app .close-x{ background:none; border:none; color:var(--grey); font-size:20px; line-height:1; padding:2px 6px; }#zm-app .close-x:hover{ color:var(--text); }#zm-app .toast{
+    position:fixed; bottom:24px; left:50%; transform:translateX(-50%);
+    background:var(--accent); color:var(--ink); padding:10px 18px; border-radius:2px; max-width:min(560px, calc(100% - 32px)); text-align:center; line-height:1.45;
+    font-size:13px; font-weight:600; z-index:200; box-shadow:0 6px 20px rgba(0,0,0,0.3);
+  }@media (max-width:640px){#zm-app .topbar{ padding:14px 16px; }#zm-app main{ padding:0 16px 60px; }#zm-app .editor-header{ flex-direction:column; }#zm-app .save-status{ display:none; }}
+</style>
+</head>
+<body>
+<div id="zm-app">
+<div class="topbar">
+  <div class="brand"><h1>zine maker</h1><span class="mono">·····</span></div>
+  <div class="topbar-actions" id="topActions"></div>
+</div>
+
+<main id="app"></main>
+<div id="modalRoot"></div>
+<div id="confirmRoot"></div>
+<div id="toastRoot"></div>
+</div>
+<script>
+/* ============================================================ CLOUD CONFIG
+   The publishable key is meant to be public: every rule (24-hour expiry,
+   3 zines per visitor, visitors only see their own zines) is enforced
+   inside the database. Never put the service-role / secret key here. */
+const ZM_SUPABASE_URL = 'https://axmzxphxcgwrsbkixmbg.supabase.co';
+const ZM_SUPABASE_KEY = 'sb_publishable_bcqkFGvCkSS5-sY8f6xLyQ_Am-8ngTZ';
+const BUCKET = 'zine-photos';
+const MAX_SAVED = 3;
+
+/* ============================================================ STATE */
+const PAPER = {
+  letter: { label:'US Letter', w:11, h:8.5, unit:'in' },
+  a4: { label:'A4', w:29.7, h:21.0, unit:'cm' }
+};
+const CELLS_PER_SIDE = 8;
+const BORDER_PCT = 0.02;
+
+/* Reading order (Front cover → Page 1..12 → Back cover) used by Autofill,
+   distinct from physical grid order. */
+const READING_ORDER = [
+  {side:'front', index:3},                                     // Front cover
+  {side:'back', index:0},{side:'back', index:1},{side:'back', index:2},{side:'back', index:3}, // Pages 1-4
+  {side:'back', index:7},{side:'back', index:6},{side:'back', index:5},{side:'back', index:4}, // Pages 5-8
+  {side:'front', index:6},{side:'front', index:5},{side:'front', index:1},{side:'front', index:2}, // Pages 9-12
+  {side:'front', index:7},                                     // Back cover
+];
+
+/* Fold template reconstructed from the hand-drawn layout:
+   grid index 0-3 = row1 (cols 1-4), 4-7 = row2 (cols 1-4).
+   Side A ("front") is confirmed from a straight-on photo.
+   Side B ("back") was reconstructed from a rotated photo — flagged as best-guess. */
+const FOLD_TEMPLATE = {
+  front: [
+    {type:'glue',  label:'Glue tab',    rot:0},
+    {type:'photo', label:'Page 11',     rot:0},
+    {type:'photo', label:'Page 12',     rot:0},
+    {type:'photo', label:'Front cover', rot:0},
+    {type:'glue',  label:'Glue tab',    rot:180},
+    {type:'photo', label:'Page 10',     rot:180},
+    {type:'photo', label:'Page 9',      rot:180},
+    {type:'photo', label:'Back cover',  rot:180},
+  ],
+  back: [
+    {type:'photo', label:'Page 1', rot:0},
+    {type:'photo', label:'Page 2', rot:0},
+    {type:'photo', label:'Page 3', rot:0},
+    {type:'photo', label:'Page 4', rot:0},
+    {type:'photo', label:'Page 8', rot:180},
+    {type:'photo', label:'Page 7', rot:180},
+    {type:'photo', label:'Page 6', rot:180},
+    {type:'photo', label:'Page 5', rot:180},
+  ]
+};
+
+let state = {
+  view: 'gallery',
+  zines: [],
+  loading: true,
+  filterText: '',
+  sortBy: 'date-desc',
+  editing: null,
+  photos: [],
+  selectedCell: null,
+  viewerZine: null,
+};
+
+function uid(prefix='id'){ return prefix + '_' + Math.random().toString(36).slice(2,10); }
+function emptyCell(side, index){
+  const tpl = FOLD_TEMPLATE[side][index];
+  return { photoId:null, span:false, spanOf:null, border:false, zoom:1, ox:0, oy:0, rot:0,
+    type:tpl.type, label:tpl.label, baseRot:tpl.rot };
+}
+function newZineDraft(){
+  const cells = {};
+  ['front','back'].forEach(side=>{ for(let i=0;i<CELLS_PER_SIDE;i++) cells[side+'-'+i] = emptyCell(side,i); });
+  return { id: uid('zine'), cloudId:null, uploaded:[], expiresAt:null,
+    title:'', date: new Date().toISOString().slice(0,10), description:'',
+    paper:'letter', cells, cover:null, photoLibrary:{}, createdAt: Date.now() };
+}
+
+/* ============================================================ CLOUD STORAGE (Supabase)
+   Each browser gets an anonymous identity — no sign-up. A zine row holds
+   the title, a small cover thumbnail and the layout; its photos live in
+   the private bucket at  <user id>/<zine id>/<photo id>.jpg  */
+const CLOUD = { client:null, user:null, ready:false };
+
+async function cloudInit(){
+  if(!window.supabase || !ZM_SUPABASE_URL || !ZM_SUPABASE_KEY) return false;
+  try{
+    CLOUD.client = window.supabase.createClient(ZM_SUPABASE_URL, ZM_SUPABASE_KEY);
+    const { data:{ session } } = await CLOUD.client.auth.getSession();
+    if(session){
+      const { data, error } = await CLOUD.client.auth.getUser();
+      if(!error && data && data.user){ CLOUD.user = data.user; CLOUD.ready = true; return true; }
+      try{ await CLOUD.client.auth.signOut({ scope:'local' }); }catch(e){ /* identity was cleaned up server-side */ }
+    }
+    const { data, error } = await CLOUD.client.auth.signInAnonymously();
+    if(error) throw error;
+    CLOUD.user = data.user; CLOUD.ready = true;
+    return true;
+  }catch(e){
+    console.error('Cloud saving unavailable:', e);
+    CLOUD.ready = false;
+    return false;
+  }
+}
+
+function photoPrefix(zineId){ return `${CLOUD.user.id}/${zineId}`; }
+
+function blobToDataUrl(blob){
+  return new Promise((resolve,reject)=>{
+    const r = new FileReader();
+    r.onload = ()=>resolve(r.result);
+    r.onerror = reject;
+    r.readAsDataURL(blob);
+  });
+}
+
+function timeLeft(expiresAt){
+  if(!expiresAt) return '';
+  const ms = new Date(expiresAt) - Date.now();
+  if(ms <= 0) return 'expired';
+  const h = Math.floor(ms/3.6e6), m = Math.floor((ms%3.6e6)/6e4);
+  return h ? `deleted in ${h} h ${m} m` : `deleted in ${m} m`;
+}
+
+async function refreshZineList(){
+  if(!CLOUD.ready){ state.zines = []; return; }
+  const { data, error } = await CLOUD.client.from('zines')
+    .select('id,title,cover,created_at,expires_at,date:layout->>date,description:layout->>description,paper:layout->>paper')
+    .order('created_at', { ascending:true });
+  if(error){ console.error(error); showToast('Could not load your saved zines'); state.zines = []; return; }
+  state.zines = data.map(r=>({
+    id:r.id, cloudId:r.id, title:r.title||'', cover:r.cover||null, date:r.date||'',
+    description:r.description||'', paper:r.paper||'letter',
+    createdAt:Date.parse(r.created_at), expiresAt:r.expires_at
+  }));
+}
+
+async function loadZines(){
+  state.loading = true; render();
+  await cloudInit();
+  await refreshZineList();
+  state.loading = false; render();
+}
+
+async function loadZineRecord(id){
+  if(!CLOUD.ready) return null;
+  const db = CLOUD.client;
+  const { data:row, error } = await db.from('zines').select('*').eq('id', id).single();
+  if(error || !row) return null;
+  const prefix = photoPrefix(id);
+  const { data:files } = await db.storage.from(BUCKET).list(prefix, { limit:100 });
+  const photoLibrary = {};
+  await Promise.all((files||[]).filter(f=>f.name.endsWith('.jpg')).map(async f=>{
+    const { data:blob } = await db.storage.from(BUCKET).download(`${prefix}/${f.name}`);
+    if(blob) photoLibrary[f.name.slice(0,-4)] = await blobToDataUrl(blob);
+  }));
+  const L = row.layout || {};
+  return {
+    id:row.id, cloudId:row.id, title:row.title||'', cover:row.cover||null,
+    date:L.date||'', description:L.description||'', paper:L.paper||'letter',
+    cells:L.cells, photoDims:L.photoDims||{}, photoLibrary,
+    uploaded:Object.keys(photoLibrary),
+    createdAt:Date.parse(row.created_at), expiresAt:row.expires_at
+  };
+}
+
+async function deleteZineRecord(id){
+  if(!CLOUD.ready) return false;
+  const db = CLOUD.client, prefix = photoPrefix(id);
+  const { data:files } = await db.storage.from(BUCKET).list(prefix, { limit:100 });
+  if(files && files.length) await db.storage.from(BUCKET).remove(files.map(f=>`${prefix}/${f.name}`));
+  const { error } = await db.from('zines').delete().eq('id', id);
+  if(error){ console.error(error); showToast('Could not delete — try again'); return false; }
+  return true;
+}
+
+function handleCloudError(error, z){
+  console.error(error);
+  const msg = ((error && error.message) || '') + ' ' + ((error && error.code) || '');
+  if(msg.includes('ZINE_LIMIT')){
+    showToast(`You already have ${MAX_SAVED} saved zines. Delete one to save this, or download the PDF.`);
+  }else if(msg.includes('SITE_FULL')){
+    showToast('Temporary storage is full right now. Download the PDF to keep your zine.');
+  }else if(msg.includes('PGRST116')){
+    showToast('This zine passed its 24 hours and was removed. Save again to keep it for another 24 hours.');
+    if(z){ z.cloudId = null; z.uploaded = []; z.expiresAt = null; z.id = uid('zine'); }
+  }else{
+    showToast('Could not save — check your connection and try again.');
+  }
+  updateSaveStatus();
+}
+
+/* Only one save runs at a time, so autosave and the Save button can
+   never create two copies of the same zine. */
+let saveInFlight = null;
+async function persistCurrentZine(){
+  if(saveInFlight){ try{ await saveInFlight; }catch(e){} }
+  saveInFlight = doPersist();
+  try{ return await saveInFlight; } finally { saveInFlight = null; }
+}
+
+async function doPersist(){
+  const z = state.editing;
+  if(!z || !zineHasContent(z)) return false;
+  if(!CLOUD.ready){ showToast('Saving is unavailable right now. Download the PDF to keep your zine.'); return false; }
+  const db = CLOUD.client;
+  const record = buildZineRecord();
+  const cover = record.cover ? await downscaleDataUrl(record.cover, 420, 0.8) : null;
+  const layout = { date:record.date||'', description:record.description||'', paper:record.paper,
+    cells:record.cells, photoDims:record.photoDims };
+  const title = (record.title||'').slice(0,120);
+
+  let row;
+  if(z.cloudId){
+    const { data, error } = await db.from('zines').update({ title, cover, layout })
+      .eq('id', z.cloudId).select('id,created_at,expires_at').single();
+    if(error){ handleCloudError(error, z); return false; }
+    row = data;
+  }else{
+    const { data, error } = await db.from('zines').insert({ title, cover, layout })
+      .select('id,created_at,expires_at').single();
+    if(error){ handleCloudError(error, z); return false; }
+    row = data;
+    z.cloudId = row.id; z.id = row.id; z.uploaded = [];
+  }
+  z.expiresAt = row.expires_at;
+
+  // Upload photos this zine uses that aren't stored yet (they're already
+  // downscaled JPEGs from the upload step).
+  const uploaded = new Set(z.uploaded || []);
+  const usedIds = Object.keys(record.photoLibrary);
+  const prefix = photoPrefix(z.cloudId);
+  for(const pid of usedIds){
+    if(uploaded.has(pid)) continue;
+    try{
+      const blob = await (await fetch(record.photoLibrary[pid])).blob();
+      const { error } = await db.storage.from(BUCKET)
+        .upload(`${prefix}/${pid}.jpg`, blob, { contentType:'image/jpeg', upsert:true });
+      if(error) throw error;
+      uploaded.add(pid);
+    }catch(e){
+      console.error(e);
+      z.uploaded = [...uploaded];
+      showToast('Some photos did not upload — try saving again.');
+      updateSaveStatus();
+      return false;
+    }
+  }
+  // Remove photos that were taken out of the zine.
+  const stale = [...uploaded].filter(pid=>!usedIds.includes(pid));
+  if(stale.length){
+    const { error } = await db.storage.from(BUCKET).remove(stale.map(pid=>`${prefix}/${pid}.jpg`));
+    if(!error) stale.forEach(pid=>uploaded.delete(pid));
+  }
+  z.uploaded = [...uploaded];
+  updateSaveStatus();
+  return true;
+}
+
+/* Shrinks an existing data URL down to thumbnail size for the gallery
+   cover, so the zine list stays light. */
+function downscaleDataUrl(dataUrl, maxDim=420, quality=0.8){
+  return new Promise(resolve=>{
+    const img = new Image();
+    img.onload = ()=>{
+      let w = img.naturalWidth, h = img.naturalHeight;
+      if(w>maxDim || h>maxDim){
+        if(w>=h){ h = Math.round(h*maxDim/w); w = maxDim; }
+        else{ w = Math.round(w*maxDim/h); h = maxDim; }
+      }
+      const canvas = document.createElement('canvas');
+      canvas.width=w; canvas.height=h;
+      canvas.getContext('2d').drawImage(img,0,0,w,h);
+      resolve(canvas.toDataURL('image/jpeg', quality));
+    };
+    img.onerror = ()=>resolve(dataUrl);
+    img.src = dataUrl;
+  });
+}
+function showToast(msg){
+  const root = document.getElementById('toastRoot');
+  root.innerHTML = `<div class="toast">${escapeHtml(msg)}</div>`;
+  clearTimeout(showToast._t);
+  showToast._t = setTimeout(()=>{ root.innerHTML=''; }, msg.length>60 ? 4500 : 2200);
+}
+
+/* In-app confirm dialog (kept custom so it looks the same everywhere). */
+function showConfirm(message, confirmLabel='Confirm'){
+  return new Promise(resolve=>{
+    const root = document.getElementById('confirmRoot');
+    root.innerHTML = `
+      <div class="modal-backdrop" style="z-index:300;" id="confirmBackdrop">
+        <div class="modal" style="max-width:380px;">
+          <p style="font-size:14px;line-height:1.55;margin:0 0 20px;color:var(--text);">${escapeHtml(message)}</p>
+          <div class="modal-actions">
+            <button class="btn btn-ghost" id="confirmCancelBtn">Cancel</button>
+            <button class="btn btn-danger" id="confirmOkBtn">${escapeHtml(confirmLabel)}</button>
+          </div>
+        </div>
+      </div>`;
+    const done = (val)=>{ root.innerHTML=''; resolve(val); };
+    document.getElementById('confirmCancelBtn').onclick = ()=>done(false);
+    document.getElementById('confirmOkBtn').onclick = ()=>done(true);
+    document.getElementById('confirmBackdrop').onclick = e=>{ if(e.target.id==='confirmBackdrop') done(false); };
+  });
+}
+function escapeHtml(s){ return (s||'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+/* ============================================================ IMAGE HELPERS
+   Photos are shrunk to 1800px on the long edge as JPEG on upload — plenty
+   for print at this panel size, and small enough for temporary storage. */
+function fileToDownscaledDataUrl(file, maxDim=1800, quality=0.86){
+  return new Promise((resolve,reject)=>{
+    const img = new Image();
+    const reader = new FileReader();
+    reader.onload = e=>{
+      img.onload = ()=>{
+        let w = img.naturalWidth, h = img.naturalHeight;
+        if(w>maxDim || h>maxDim){
+          if(w>=h){ h = Math.round(h*maxDim/w); w = maxDim; }
+          else{ w = Math.round(w*maxDim/h); h = maxDim; }
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width=w; canvas.height=h;
+        canvas.getContext('2d').drawImage(img,0,0,w,h);
+        resolve({ dataUrl: canvas.toDataURL('image/jpeg', quality), w, h });
+      };
+      img.onerror = reject;
+      img.src = e.target.result;
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+/* ============================================================ RENDER ROOT */
+function render(){
+  renderTopActions();
+  const app = document.getElementById('app');
+  if(state.view==='gallery') app.innerHTML = renderGallery();
+  else if(state.view==='editor') app.innerHTML = renderEditor();
+  bindEvents();
+  if(state.view==='editor'){ requestAnimationFrame(layoutAllCells); scheduleAutosave(); }
+}
+
+function saveStatusText(){
+  const z = state.editing;
+  if(!z) return '';
+  if(!CLOUD.ready) return 'saving unavailable';
+  if(!z.cloudId) return 'not saved yet';
+  return 'saved · ' + timeLeft(z.expiresAt);
+}
+function updateSaveStatus(){
+  const el = document.getElementById('saveStatus');
+  if(el) el.textContent = saveStatusText();
+}
+
+function renderTopActions(){
+  const el = document.getElementById('topActions');
+  if(state.view==='gallery'){
+    el.innerHTML = `<button class="btn btn-primary" id="newZineBtn">+ new zine</button>`;
+  }else{
+    el.innerHTML = `
+      <span class="save-status" id="saveStatus">${escapeHtml(saveStatusText())}</span>
+      <button class="btn btn-ghost" id="backToGallery">← all zines</button>
+      <button class="btn btn-primary" id="saveZineBtn">save zine</button>`;
+  }
+}
+
+/* ============================================================ GALLERY VIEW */
+function galleryNotice(){
+  if(state.loading) return '';
+  if(!CLOUD.ready) return `<div class="zm-notice warn"><strong>Saving is unavailable right now.</strong> You can still make a zine and download it as a PDF.</div>`;
+  return `<div class="zm-notice"><strong>Saves are temporary.</strong> Zines you save here are deleted 24 hours after you first save them, and you can keep up to ${MAX_SAVED} at a time (${state.zines.length} of ${MAX_SAVED} used). Saves stay in this browser only. Download the PDF to keep your zine.</div>`;
+}
+
+function renderGallery(){
+  if(state.loading){
+    return `<div class="empty-state"><p>Loading your saved zines…</p></div>`;
+  }
+  if(state.zines.length===0){
+    return `
+      ${galleryNotice()}
+      <div class="empty-state">
+        <h2>No saved zines</h2>
+        <p>One-page mini zines you fold and print at home. Start a new one to upload photos and lay out your grid.</p>
+        <button class="btn btn-primary" id="emptyNewZineBtn">+ new zine</button>
+      </div>`;
+  }
+  let list = state.zines.filter(z=>{
+    const q = state.filterText.trim().toLowerCase();
+    if(!q) return true;
+    return (z.title||'').toLowerCase().includes(q) || (z.description||'').toLowerCase().includes(q);
+  });
+  list = list.slice().sort((a,b)=>{
+    if(state.sortBy==='date-desc') return (b.date||'').localeCompare(a.date||'');
+    if(state.sortBy==='date-asc') return (a.date||'').localeCompare(b.date||'');
+    if(state.sortBy==='title-asc') return (a.title||'').localeCompare(b.title||'');
+    return 0;
+  });
+  const cards = list.map(z=>{
+    const cover = z.cover ? `style="background-image:url('${z.cover}')"` : '';
+    return `
+      <div class="card" data-id="${z.id}">
+        <div class="card-thumb ${z.cover?'':'empty'}" ${cover}>${z.cover? '' : 'no cover yet'}</div>
+        <div class="card-body">
+          <div class="card-title">${escapeHtml(z.title || 'Untitled zine')}</div>
+          <div class="card-meta">${escapeHtml(z.date||'')}${z.date?' · ':''}<span class="zm-expiry" data-expires="${escapeHtml(z.expiresAt||'')}">${escapeHtml(timeLeft(z.expiresAt))}</span></div>
+        </div>
+      </div>`;
+  }).join('');
+  return `
+    ${galleryNotice()}
+    <div class="gallery-controls">
+      <input type="text" id="filterInput" placeholder="Filter by title or description…" value="${escapeHtml(state.filterText)}">
+      <select id="sortSelect">
+        <option value="date-desc" ${state.sortBy==='date-desc'?'selected':''}>Newest first</option>
+        <option value="date-asc" ${state.sortBy==='date-asc'?'selected':''}>Oldest first</option>
+        <option value="title-asc" ${state.sortBy==='title-asc'?'selected':''}>Title A–Z</option>
+      </select>
+      <span class="gallery-count mono">${list.length} of ${state.zines.length}</span>
+    </div>
+    <div class="grid">${cards}</div>`;
+}
+
+/* ============================================================ EDITOR VIEW */
+function editorNotice(){
+  const z = state.editing;
+  if(!CLOUD.ready) return `<div class="zm-notice warn">Saving is unavailable right now. You can still build your zine and download the PDF.</div>`;
+  if(!z.cloudId && state.zines.length>=MAX_SAVED) return `<div class="zm-notice warn">You already have ${MAX_SAVED} saved zines, so this one can't be saved until you delete one. You can still download the PDF.</div>`;
+  if(!z.cloudId) return `<div class="zm-notice"><strong>Not saved yet.</strong> Saved zines are kept for 24 hours, then deleted automatically (up to ${MAX_SAVED} at a time). Download the PDF to keep yours.</div>`;
+  return '';
+}
+
+function renderEditor(){
+  const z = state.editing;
+  const paperKey = z.paper;
+  const tray = state.photos.length ? state.photos.map(p=>{
+    const used = isPhotoUsed(p.id);
+    return `<div class="tray-thumb ${used?'used':''}" draggable="true" data-photo-id="${p.id}" style="background-image:url('${p.dataUrl}')">
+      <span class="badge">${p.orientation==='landscape'?'H':'V'}</span></div>`;
+  }).join('') : `<div class="tray-empty">upload photos to begin — drag them into the grid below.</div>`;
+
+  return `
+    ${editorNotice()}
+    <div class="editor-header">
+      <div class="field grow"><label>Title</label><input type="text" id="fieldTitle" maxlength="120" value="${escapeHtml(z.title)}" placeholder="Untitled zine"></div>
+      <div class="field"><label>Date</label><input type="date" id="fieldDate" value="${escapeHtml(z.date)}"></div>
+      <div class="field grow"><label>Description</label><textarea id="fieldDesc" placeholder="Optional notes about this zine…">${escapeHtml(z.description)}</textarea></div>
+      <div class="field"><label>Paper size</label>
+        <div class="paper-toggle">
+          <button data-paper="letter" class="${paperKey==='letter'?'active':''}">US Letter</button>
+          <button data-paper="a4" class="${paperKey==='a4'?'active':''}">A4</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="tray-wrap">
+      <div class="tray-label">
+        <span class="mono">Photo tray</span>
+        <div style="display:flex; gap:8px;">
+          <button class="btn btn-ghost" id="autofillBtn" ${state.photos.length===0?'disabled':''}>autofill first 14</button>
+          <label class="btn btn-ghost" style="cursor:pointer;">+ upload photos
+          <input type="file" id="uploadInput" accept="image/*" multiple style="display:none;"></label>
+        </div>
+      </div>
+      <div class="filmstrip" id="filmstrip">${tray}</div>
+    </div>
+
+    ${renderInspector()}
+
+    <div class="board-section"><div class="board-label"><span class="mono">Side A — front</span><span class="rule"></span></div>${renderBoard('front', paperKey)}</div>
+    <div class="board-section"><div class="board-label"><span class="mono">Side B — back</span><span class="rule"></span></div>${renderBoard('back', paperKey)}</div>
+
+    <p class="hint">Once you've saved a zine, later changes save automatically. Saved zines are deleted 24 hours after the first save, so download the PDF to keep yours. Layout follows the fold template: two glued accordion strips, front cover + pages 9–12 on side A, pages 1–8 on side B. Upside-down cells are pre-rotated to read correctly once folded — the rotate button adds to that, it doesn't replace it. Side B's exact orientation was reconstructed from a rotated photo, so check it against your paper copy before printing. Horizontal photos can span two adjacent cells in a row · portrait cells can take a ${Math.round(BORDER_PCT*100)}% white border · use the ⠿ handle on a filled cell to drag it onto another cell and swap their photos.</p>
+
+    <div class="editor-footer">
+      <button class="btn btn-ghost" id="exportPdfBtn">export pdf</button>
+      <button class="btn btn-primary" id="saveZineBtn2">save zine</button>
+    </div>`;
+}
+
+function isPhotoUsed(photoId){ return Object.values(state.editing.cells).some(c=>c.photoId===photoId); }
+
+function renderBoard(side, paperKey){
+  const z = state.editing;
+  let cellsHtml = '';
+  for(let i=0;i<CELLS_PER_SIDE;i++){
+    const key = side+'-'+i;
+    const cell = z.cells[key];
+    if(cell.spanOf!==null && cell.spanOf!==undefined) continue;
+    const isSelected = state.selectedCell && state.selectedCell.side===side && state.selectedCell.index===i;
+    let inner;
+    if(cell.type==='glue'){
+      inner = `<span class="placeholder">leave blank<br>for gluing</span>`;
+    }else if(cell.photoId){
+      const wrapClass = cell.border ? 'bordered' : '';
+      inner = `
+        <div class="cell-photo-wrap ${wrapClass}" data-photokey="${key}">
+          <div class="pan-layer" data-pankey="${key}"><img data-imgkey="${key}" src="${photoDataUrl(cell.photoId)}"></div>
+        </div>
+        ${!cell.span && !(cell.spanOf!=null) ? `<div class="cell-drag-handle" draggable="true" data-side="${side}" data-index="${i}" title="Drag to swap with another cell">⠿</div>` : ''}
+        ${cell.border?'<span class="tag">border</span>':''}
+        ${cell.span?'<span class="tag" style="right:auto;left:5px;bottom:4px;top:auto;">span 2</span>':''}`;
+    }else{
+      inner = `<span class="placeholder">drop photo</span>`;
+    }
+    cellsHtml += `<div class="cell ${cell.type==='glue'?'glue':''} ${cell.span?'spanned':''} ${isSelected?'selected':''}" data-side="${side}" data-index="${i}" data-type="${cell.type}">
+      <span class="cell-no mono">${escapeHtml(cell.label)}</span>${inner}</div>`;
+  }
+  return `<div class="board ${paperKey==='a4'?'a4':''}" data-side="${side}">${cellsHtml}</div>`;
+}
+
+function photoDataUrl(photoId){
+  const p = state.photos.find(ph=>ph.id===photoId);
+  if(p) return p.dataUrl;
+  const lib = state.editing.photoLibrary || {};
+  return lib[photoId] || '';
+}
+function photoDims(photoId){
+  const p = state.photos.find(ph=>ph.id===photoId);
+  if(p) return { w:p.w, h:p.h };
+  const dims = (state.editing.photoDims||{})[photoId];
+  return dims || { w:1000, h:1000 };
+}
+
+function renderInspector(){
+  const sel = state.selectedCell;
+  if(!sel) return `<div class="inspector"><span class="empty">Select a filled cell to adjust position, zoom, rotation, span or border.</span></div>`;
+  const key = sel.side+'-'+sel.index;
+  const cell = state.editing.cells[key];
+  if(cell.type==='glue') return `<div class="inspector"><span class="empty">${escapeHtml(cell.label)} — leave this blank. It's used to glue the two accordion strips together, not for a photo.</span></div>`;
+  if(!cell.photoId) return `<div class="inspector"><span class="empty">${escapeHtml(cell.label)} is empty — drag a photo from the tray above into it.</span></div>`;
+  const dims = photoDims(cell.photoId);
+  const orientation = dims.w>=dims.h ? 'landscape' : 'portrait';
+
+  return `
+    <div class="inspector" id="inspectorBox">
+      <div class="inspector-group"><label>Zoom</label><input type="range" id="zoomRange" min="1" max="3" step="0.05" value="${cell.zoom}"></div>
+      <div class="inspector-group"><label>Reposition</label><div class="inspector-row">
+        <span class="mono" style="font-size:10px;color:var(--grey);">drag photo in cell to pan</span>
+        <button class="icon-btn" id="recenterBtn" title="Reset position to center" style="width:auto;padding:0 10px;">Re-center</button>
+      </div></div>
+      <div class="inspector-group"><label>Rotate</label><div class="inspector-row"><button class="icon-btn" id="rotateBtn" title="Rotate 90°">⟳</button></div></div>
+      ${orientation==='landscape' ? `
+      <div class="inspector-group"><label>Layout</label>
+        <label class="toggle"><input type="checkbox" id="spanToggle" ${cell.span?'checked':''} ${(!cell.span && sel.index%4===3)?'disabled':''}> Span 2 cells (horizontal)</label>
+      </div>` : ''}
+      ${orientation==='portrait' ? `
+      <div class="inspector-group"><label>Border</label>
+        <label class="toggle"><input type="checkbox" id="borderToggle" ${cell.border?'checked':''}> Add ${Math.round(BORDER_PCT*100)}% white border</label>
+      </div>` : ''}
+      <div class="inspector-group"><label>&nbsp;</label><button class="btn btn-danger" id="clearCellBtn">Remove photo</button></div>
+    </div>`;
+}
+
+function cellOccupiedAsSpanTarget(side, index){
+  if(index>=CELLS_PER_SIDE) return true;
+  const c = state.editing.cells[side+'-'+index];
+  return c.type==='glue' || c.photoId!==null || (c.spanOf!==null && c.spanOf!==undefined);
+}
+
+/* ============================================================ CELL IMAGE LAYOUT (keeps preview + export math identical) */
+function layoutAllCells(){
+  document.querySelectorAll('.cell-photo-wrap').forEach(wrap=>{
+    const key = wrap.dataset.photokey;
+    layoutCellImage(key);
+  });
+}
+function layoutCellImage(key){
+  const wrap = document.querySelector(`.cell-photo-wrap[data-photokey="${key}"]`);
+  if(!wrap) return;
+  const cell = state.editing.cells[key];
+  if(!cell || !cell.photoId) return;
+  const cellEl = wrap.closest('.cell');
+  const cw = cellEl.clientWidth, ch = cellEl.clientHeight;
+  const inset = cell.border ? Math.min(cw,ch)*BORDER_PCT : 0;
+  const iw = cw - inset*2, ih = ch - inset*2;
+  wrap.style.left = inset+'px'; wrap.style.top = inset+'px';
+  wrap.style.width = iw+'px'; wrap.style.height = ih+'px';
+
+  const dims = photoDims(cell.photoId);
+  const totalRot = ((cell.baseRot||0) + cell.rot) % 360;
+  const rotSwapped = (totalRot % 180) !== 0;
+  const baseW = rotSwapped ? dims.h : dims.w;
+  const baseH = rotSwapped ? dims.w : dims.h;
+  const scale = Math.max(iw/baseW, ih/baseH) * cell.zoom;
+  const drawW = dims.w*scale, drawH = dims.h*scale;
+
+  const img = wrap.querySelector('img');
+  img.style.width = drawW+'px'; img.style.height = drawH+'px';
+  img.style.transform = `translate(-50%,-50%) rotate(${totalRot}deg)`;
+
+  const panLayer = wrap.querySelector('.pan-layer');
+  panLayer.style.transform = `translate(${cell.ox*iw}px, ${cell.oy*ih}px)`;
+}
+
+/* ============================================================ EVENTS */
+function leaveEditor(){
+  state.view='gallery'; state.editing=null; state.photos=[]; state.selectedCell=null;
+  render();
+  refreshZineList().then(()=>{ if(state.view==='gallery') render(); });
+}
+
+function bindEvents(){
+  const newZineBtn = document.getElementById('newZineBtn');
+  if(newZineBtn) newZineBtn.onclick = ()=>{ openEditor(newZineDraft()); };
+  const emptyNewZineBtn = document.getElementById('emptyNewZineBtn');
+  if(emptyNewZineBtn) emptyNewZineBtn.onclick = ()=>{ openEditor(newZineDraft()); };
+  const backBtn = document.getElementById('backToGallery');
+  if(backBtn) backBtn.onclick = async ()=>{
+    clearTimeout(autosaveTimer); autosaveTimer = null;
+    const z = state.editing;
+    if(z && zineHasContent(z)){
+      if(z.cloudId){
+        const saved = await persistCurrentZine();
+        if(!saved){
+          const leaveAnyway = await showConfirm('Your latest changes could not be saved. Leave anyway?', 'Leave anyway');
+          if(!leaveAnyway) return;
+        }
+      }else{
+        const leaveAnyway = await showConfirm("This zine hasn't been saved. Leave and lose it? You can save it or download the PDF first.", 'Leave anyway');
+        if(!leaveAnyway) return;
+      }
+    }
+    leaveEditor();
+  };
+  const saveBtn = document.getElementById('saveZineBtn');
+  if(saveBtn) saveBtn.onclick = saveCurrentZine;
+  const saveBtn2 = document.getElementById('saveZineBtn2');
+  if(saveBtn2) saveBtn2.onclick = saveCurrentZine;
+
+  if(state.view==='gallery'){
+    document.querySelectorAll('.card').forEach(card=>{ card.onclick = ()=>{ openViewer(state.zines.find(z=>z.id===card.dataset.id)); }; });
+    const fi = document.getElementById('filterInput');
+    if(fi){ fi.oninput = e=>{ const pos=e.target.selectionStart; state.filterText = e.target.value; render(); const el=document.getElementById('filterInput'); el.focus(); el.setSelectionRange(pos,pos); }; }
+    const ss = document.getElementById('sortSelect');
+    if(ss) ss.onchange = e=>{ state.sortBy = e.target.value; render(); };
+    return;
+  }
+
+  const fieldTitle = document.getElementById('fieldTitle'); if(fieldTitle) fieldTitle.oninput = e=>{ state.editing.title = e.target.value; scheduleAutosave(); };
+  const fieldDate = document.getElementById('fieldDate'); if(fieldDate) fieldDate.oninput = e=>{ state.editing.date = e.target.value; scheduleAutosave(); };
+  const fieldDesc = document.getElementById('fieldDesc'); if(fieldDesc) fieldDesc.oninput = e=>{ state.editing.description = e.target.value; scheduleAutosave(); };
+
+  document.querySelectorAll('.paper-toggle button').forEach(btn=>{ btn.onclick = ()=>{ state.editing.paper = btn.dataset.paper; render(); }; });
+
+  const uploadInput = document.getElementById('uploadInput'); if(uploadInput) uploadInput.onchange = handleUpload;
+  const autofillBtn = document.getElementById('autofillBtn'); if(autofillBtn) autofillBtn.onclick = autofillZine;
+  const exportBtn = document.getElementById('exportPdfBtn'); if(exportBtn) exportBtn.onclick = ()=>exportZinePdf(buildZineRecord());
+
+  document.querySelectorAll('.tray-thumb').forEach(t=>{
+    t.addEventListener('dragstart', e=>{ e.dataTransfer.setData('text/photo-id', t.dataset.photoId); });
+  });
+
+  document.querySelectorAll('.cell-drag-handle').forEach(handle=>{
+    handle.addEventListener('click', e=>e.stopPropagation());
+    handle.addEventListener('dragstart', e=>{
+      e.stopPropagation();
+      e.dataTransfer.setData('text/cell-key', handle.dataset.side+'-'+handle.dataset.index);
+    });
+  });
+
+  document.querySelectorAll('.cell').forEach(cellEl=>{
+    cellEl.addEventListener('dragover', e=>{ e.preventDefault(); if(cellEl.dataset.type!=='glue') cellEl.classList.add('dragover'); });
+    cellEl.addEventListener('dragleave', ()=>{ cellEl.classList.remove('dragover'); });
+    cellEl.addEventListener('drop', e=>{
+      e.preventDefault(); cellEl.classList.remove('dragover');
+      if(cellEl.dataset.type==='glue'){ showToast('Glue tab — leave this cell blank'); return; }
+      const cellKey = e.dataTransfer.getData('text/cell-key');
+      if(cellKey){ swapCells(cellKey, cellEl.dataset.side+'-'+cellEl.dataset.index); return; }
+      const photoId = e.dataTransfer.getData('text/photo-id');
+      if(photoId) assignPhotoToCell(cellEl.dataset.side, parseInt(cellEl.dataset.index), photoId);
+    });
+    cellEl.addEventListener('click', ()=>{ state.selectedCell = { side:cellEl.dataset.side, index:parseInt(cellEl.dataset.index) }; render(); });
+  });
+
+  document.querySelectorAll('.cell-photo-wrap').forEach(wrap=>{
+    let dragging=false, startX=0, startY=0, origOx=0, origOy=0;
+    const key = wrap.dataset.photokey;
+    wrap.addEventListener('pointerdown', e=>{
+      e.stopPropagation(); dragging=true; startX=e.clientX; startY=e.clientY;
+      const cell = state.editing.cells[key]; origOx=cell.ox; origOy=cell.oy;
+      wrap.setPointerCapture(e.pointerId);
+    });
+    wrap.addEventListener('pointermove', e=>{
+      if(!dragging) return;
+      const cell = state.editing.cells[key];
+      const rect = wrap.getBoundingClientRect();
+      cell.ox = origOx + (e.clientX-startX)/rect.width;
+      cell.oy = origOy + (e.clientY-startY)/rect.height;
+      layoutCellImage(key);
+    });
+    wrap.addEventListener('pointerup', ()=>{ dragging=false; scheduleAutosave(); });
+    wrap.addEventListener('pointercancel', ()=>{ dragging=false; });
+  });
+
+  const zoomRange = document.getElementById('zoomRange');
+  if(zoomRange) zoomRange.oninput = e=>{
+    const key = state.selectedCell.side+'-'+state.selectedCell.index;
+    state.editing.cells[key].zoom = parseFloat(e.target.value);
+    layoutCellImage(key);
+    scheduleAutosave();
+  };
+  const recenterBtn = document.getElementById('recenterBtn');
+  if(recenterBtn) recenterBtn.onclick = ()=>{
+    const key = state.selectedCell.side+'-'+state.selectedCell.index;
+    state.editing.cells[key].ox = 0;
+    state.editing.cells[key].oy = 0;
+    layoutCellImage(key);
+    scheduleAutosave();
+  };
+  const rotateBtn = document.getElementById('rotateBtn');
+  if(rotateBtn) rotateBtn.onclick = ()=>{
+    const key = state.selectedCell.side+'-'+state.selectedCell.index;
+    state.editing.cells[key].rot = (state.editing.cells[key].rot+90)%360;
+    layoutCellImage(key);
+    scheduleAutosave();
+  };
+  const spanToggle = document.getElementById('spanToggle');
+  if(spanToggle) spanToggle.onchange = e=>{ toggleSpan(state.selectedCell, e.target.checked); };
+  const borderToggle = document.getElementById('borderToggle');
+  if(borderToggle) borderToggle.onchange = e=>{
+    const key = state.selectedCell.side+'-'+state.selectedCell.index;
+    state.editing.cells[key].border = e.target.checked;
+    render();
+  };
+  const clearCellBtn = document.getElementById('clearCellBtn');
+  if(clearCellBtn) clearCellBtn.onclick = ()=>{
+    const key = state.selectedCell.side+'-'+state.selectedCell.index;
+    state.editing.cells[key] = emptyCell(state.selectedCell.side, state.selectedCell.index);
+    render();
+  };
+}
+
+async function handleUpload(e){
+  const files = Array.from(e.target.files || []);
+  for(const f of files){
+    try{
+      const {dataUrl,w,h} = await fileToDownscaledDataUrl(f);
+      state.photos.push({ id:uid('ph'), dataUrl, w, h, orientation: w>=h?'landscape':'portrait' });
+    }catch(err){ console.error(err); }
+  }
+  render();
+}
+
+function assignPhotoToCell(side, index, photoId){
+  const key = side+'-'+index;
+  if(state.editing.cells[key].type==='glue'){ showToast('Glue tab — leave this cell blank'); return; }
+  state.editing.cells[key] = emptyCell(side, index);
+  state.editing.cells[key].photoId = photoId;
+  state.selectedCell = {side, index};
+  render();
+}
+
+function toggleSpan(sel, on){
+  const key = sel.side+'-'+sel.index;
+  const cell = state.editing.cells[key];
+  if(on){
+    const nextIndex = sel.index+1;
+    if(sel.index%4===3 || cellOccupiedAsSpanTarget(sel.side, nextIndex)){ showToast('No adjacent free cell to span into'); return; }
+    cell.span = true;
+    state.editing.cells[sel.side+'-'+nextIndex] = { ...emptyCell(sel.side, nextIndex), spanOf: sel.index };
+  }else{
+    cell.span = false;
+    const nextKey = sel.side+'-'+(sel.index+1);
+    if(state.editing.cells[nextKey] && state.editing.cells[nextKey].spanOf===sel.index) state.editing.cells[nextKey] = emptyCell(sel.side, sel.index+1);
+  }
+  render();
+}
+
+async function autofillZine(){
+  if(!state.photos.length){ showToast('Upload photos first'); return; }
+  const alreadyHasContent = READING_ORDER.some(pos=>state.editing.cells[pos.side+'-'+pos.index].photoId);
+  if(alreadyHasContent){
+    const ok = await showConfirm('Autofill will overwrite any photos already placed in the grid. Continue?', 'Autofill');
+    if(!ok) return;
+  }
+  const photosToUse = state.photos.slice(0,14);
+  READING_ORDER.forEach((pos,i)=>{
+    const key = pos.side+'-'+pos.index;
+    state.editing.cells[key] = emptyCell(pos.side, pos.index);
+    if(photosToUse[i]) state.editing.cells[key].photoId = photosToUse[i].id;
+  });
+  state.selectedCell = null;
+  render();
+  showToast(photosToUse.length<14 ? `Filled ${photosToUse.length} of 14 cells — upload more for the rest` : 'Autofilled all 14 cells in reading order');
+}
+
+function swapCells(keyA, keyB){
+  if(keyA===keyB) return;
+  const a = state.editing.cells[keyA], b = state.editing.cells[keyB];
+  if(!a || !b) return;
+  if(a.type==='glue' || b.type==='glue'){ showToast('Glue tab can\'t hold a photo'); return; }
+  if(a.span || b.span || (a.spanOf!=null) || (b.spanOf!=null)){ showToast('Remove the span before swapping that cell'); return; }
+  if(!a.photoId){ showToast('Nothing to swap — drag from a filled cell'); return; }
+  const fields = ['photoId','zoom','ox','oy','rot','border'];
+  const temp = {}; fields.forEach(f=>temp[f]=a[f]);
+  fields.forEach(f=>a[f]=b[f]);
+  fields.forEach(f=>b[f]=temp[f]);
+  const [bSide,bIndexStr] = keyB.split('-');
+  state.selectedCell = { side:bSide, index:parseInt(bIndexStr) };
+  render();
+}
+
+/* ============================================================ EDITOR OPEN / SAVE */
+function openEditor(zineDraft){
+  state.editing = zineDraft;
+  if(!state.photos.length && zineDraft.photoLibrary){
+    state.photos = Object.entries(zineDraft.photoLibrary).map(([id,dataUrl])=>{
+      const dims = (zineDraft.photoDims||{})[id] || {w:1000,h:1000};
+      return { id, dataUrl, w:dims.w, h:dims.h, orientation: dims.w>=dims.h?'landscape':'portrait' };
+    });
+  }
+  state.selectedCell = null;
+  state.view = 'editor';
+  render();
+}
+
+function zineHasContent(z){
+  return !!(z.title && z.title.trim()) || Object.values(z.cells).some(c=>c.photoId);
+}
+function buildZineRecord(){
+  const z = state.editing;
+  const usedIds = new Set(Object.values(z.cells).map(c=>c.photoId).filter(Boolean));
+  const photoLibrary = {}, photoDimsMap = {};
+  state.photos.forEach(p=>{ if(usedIds.has(p.id)){ photoLibrary[p.id]=p.dataUrl; photoDimsMap[p.id]={w:p.w,h:p.h}; } });
+  const frontCoverPhotoId = z.cells['front-3'] && z.cells['front-3'].photoId;
+  const cover = (frontCoverPhotoId && photoLibrary[frontCoverPhotoId]) || z.cover || null;
+  return { ...z, cover, photoLibrary, photoDims: photoDimsMap };
+}
+
+/* Autosave: after a zine has been saved once, changes are written to the
+   cloud a few seconds after you pause. New zines aren't autosaved, so a
+   visitor never uses up one of their saves without clicking Save. */
+let autosaveTimer = null;
+function scheduleAutosave(){
+  if(!state.editing || !state.editing.cloudId || !CLOUD.ready) return;
+  clearTimeout(autosaveTimer);
+  autosaveTimer = setTimeout(()=>{ autosaveTimer = null; persistCurrentZine(); }, 2500);
+}
+
+async function saveCurrentZine(){
+  clearTimeout(autosaveTimer); autosaveTimer = null;
+  const z = state.editing;
+  if(!z || !zineHasContent(z)){ showToast('Add a title or a photo before saving'); return; }
+  const btns = [document.getElementById('saveZineBtn'), document.getElementById('saveZineBtn2')].filter(Boolean);
+  btns.forEach(b=>{ b.disabled = true; b.textContent = 'saving…'; });
+  const saved = await persistCurrentZine();
+  btns.forEach(b=>{ b.disabled = false; b.textContent = 'save zine'; });
+  if(!saved) return; // a specific error toast was already shown
+  showToast('Zine saved — it will be kept for 24 hours from its first save');
+  leaveEditor();
+}
+
+window.addEventListener('beforeunload', e=>{
+  const z = state.editing;
+  if(z && zineHasContent(z) && (!z.cloudId || autosaveTimer || saveInFlight)){
+    e.preventDefault(); e.returnValue = '';
+  }
+});
+
+/* ============================================================ VIEWER MODAL */
+async function openViewer(zineLight){
+  if(!zineLight) return;
+  let zine = zineLight;
+  if(!zine.cells){
+    showToast('Loading zine…');
+    zine = await loadZineRecord(zineLight.id);
+    if(!zine){ showToast('Could not load this zine — it may have expired'); await refreshZineList(); render(); return; }
+  }
+  state.viewerZine = zine;
+  const root = document.getElementById('modalRoot');
+  const sides = ['front','back'].map(side=>{
+    let cellsHtml = '';
+    for(let i=0;i<CELLS_PER_SIDE;i++){
+      const cell = zine.cells[side+'-'+i];
+      if(cell.spanOf!==null && cell.spanOf!==undefined) continue;
+      const lib = zine.photoLibrary||{};
+      const src = cell.photoId ? (lib[cell.photoId]||'') : '';
+      const img = cell.photoId ? `<div class="pan-layer" data-mpankey="${side}-${i}"><img data-mimgkey="${side}-${i}" src="${src}"></div>` : '';
+      cellsHtml += `<div class="modal-cell ${cell.span?'spanned':''}" data-mcell="${side}-${i}">${img}</div>`;
+    }
+    return `<div class="modal-side-label mono">${side==='front'?'Side A — front':'Side B — back'}</div>
+            <div class="modal-page ${zine.paper==='a4'?'a4':''}">${cellsHtml}</div>`;
+  }).join('');
+
+  root.innerHTML = `
+    <div class="modal-backdrop" id="modalBackdrop">
+      <div class="modal">
+        <div class="modal-head"><h2>${escapeHtml(zine.title||'Untitled zine')}</h2><button class="close-x" id="closeModal">✕</button></div>
+        <div class="modal-meta mono">${escapeHtml(zine.date||'')} · ${PAPER[zine.paper].label} · ${escapeHtml(timeLeft(zine.expiresAt))}</div>
+        ${zine.description? `<div class="modal-desc">${escapeHtml(zine.description)}</div>` : ''}
+        ${sides}
+        <div class="modal-actions">
+          <button class="btn btn-danger" id="deleteZineBtn">Delete</button>
+          <button class="btn btn-ghost" id="editZineBtn">Edit</button>
+          <button class="btn btn-primary" id="downloadPdfBtn">download pdf</button>
+        </div>
+      </div>
+    </div>`;
+
+  requestAnimationFrame(()=>layoutModalCells(zine));
+  document.getElementById('closeModal').onclick = closeModal;
+  document.getElementById('modalBackdrop').onclick = e=>{ if(e.target.id==='modalBackdrop') closeModal(); };
+  document.getElementById('editZineBtn').onclick = ()=>{ closeModal(); openEditor(JSON.parse(JSON.stringify(zine))); };
+  document.getElementById('downloadPdfBtn').onclick = ()=>exportZinePdf(zine);
+  document.getElementById('deleteZineBtn').onclick = async ()=>{
+    const ok = await showConfirm('Delete this zine? This cannot be undone.', 'Delete');
+    if(!ok) return;
+    const deleted = await deleteZineRecord(zine.id);
+    if(!deleted) return;
+    state.zines = state.zines.filter(z=>z.id!==zine.id);
+    closeModal(); render();
+  };
+}
+
+function layoutModalCells(zine){
+  ['front','back'].forEach(side=>{
+    for(let i=0;i<CELLS_PER_SIDE;i++){
+      const cell = zine.cells[side+'-'+i];
+      if(cell.spanOf!==null && cell.spanOf!==undefined) continue;
+      if(!cell.photoId) continue;
+      const cellEl = document.querySelector(`.modal-cell[data-mcell="${side}-${i}"]`);
+      if(!cellEl) continue;
+      const cw = cellEl.clientWidth, ch = cellEl.clientHeight;
+      const inset = cell.border ? Math.min(cw,ch)*BORDER_PCT : 0;
+      const iw = cw-inset*2, ih = ch-inset*2;
+      const dims = (zine.photoDims||{})[cell.photoId] || {w:1000,h:1000};
+      const totalRot = ((cell.baseRot||0) + cell.rot) % 360;
+      const rotSwapped = (totalRot%180)!==0;
+      const baseW = rotSwapped?dims.h:dims.w, baseH = rotSwapped?dims.w:dims.h;
+      const scale = Math.max(iw/baseW, ih/baseH) * cell.zoom;
+      const drawW = dims.w*scale, drawH = dims.h*scale;
+      const panLayer = document.querySelector(`[data-mpankey="${side}-${i}"]`);
+      const img = document.querySelector(`[data-mimgkey="${side}-${i}"]`);
+      if(panLayer){ panLayer.style.position='absolute'; panLayer.style.left=inset+'px'; panLayer.style.top=inset+'px'; panLayer.style.width=iw+'px'; panLayer.style.height=ih+'px'; panLayer.style.transform=`translate(${cell.ox*iw}px, ${cell.oy*ih}px)`; }
+      if(img){ img.style.width=drawW+'px'; img.style.height=drawH+'px'; img.style.transform=`translate(-50%,-50%) rotate(${totalRot}deg)`; }
+    }
+  });
+}
+
+function closeModal(){ document.getElementById('modalRoot').innerHTML=''; }
+
+/* ============================================================ PDF EXPORT */
+async function exportZinePdf(zine){
+  showToast('Building PDF…');
+  const lib = zine.photoLibrary || {};
+  const dimsMap = zine.photoDims || {};
+  const paper = PAPER[zine.paper];
+  const DPI = 200;
+  const pxPerUnit = zine.paper==='a4' ? DPI/2.54 : DPI;
+  const pageWpx = Math.round(paper.w * pxPerUnit);
+  const pageHpx = Math.round(paper.h * pxPerUnit);
+  const cols=4, rows=2;
+  const cellWpx = pageWpx/cols, cellHpx = pageHpx/rows;
+
+  const { jsPDF } = window.jspdf;
+  const pdf = new jsPDF({ orientation:'landscape', unit: paper.unit, format: [paper.w,paper.h] });
+
+  let firstPage = true;
+  for(const side of ['front','back']){
+    const canvas = document.createElement('canvas');
+    canvas.width = pageWpx; canvas.height = pageHpx;
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#ffffff'; ctx.fillRect(0,0,pageWpx,pageHpx);
+
+    for(let i=0;i<CELLS_PER_SIDE;i++){
+      const cell = zine.cells[side+'-'+i];
+      if(cell.spanOf!==null && cell.spanOf!==undefined) continue;
+      if(!cell.photoId || !lib[cell.photoId]) continue;
+      const col = i%4, row = Math.floor(i/4);
+      const spanCols = cell.span?2:1;
+      const x = col*cellWpx, y = row*cellHpx, w = cellWpx*spanCols, h = cellHpx;
+      const dims = dimsMap[cell.photoId] || {w:1000,h:1000};
+      await drawCellToCanvas(ctx, lib[cell.photoId], cell, dims, x, y, w, h);
+    }
+    const imgData = canvas.toDataURL('image/jpeg', 0.92);
+    if(!firstPage) pdf.addPage([paper.w,paper.h], 'landscape');
+    pdf.addImage(imgData, 'JPEG', 0, 0, paper.w, paper.h);
+    firstPage = false;
+  }
+  const filename = (zine.title||'zine').trim().replace(/[^a-z0-9\-_ ]/gi,'').replace(/\s+/g,'-').toLowerCase() || 'zine';
+  pdf.save(filename+'.pdf');
+}
+
+function drawCellToCanvas(ctx, dataUrl, cell, dims, x, y, w, h){
+  return new Promise(resolve=>{
+    const img = new Image();
+    img.onload = ()=>{
+      const inset = cell.border ? Math.min(w,h)*BORDER_PCT : 0;
+      ctx.fillStyle = '#ffffff'; ctx.fillRect(x,y,w,h);
+      const ix=x+inset, iy=y+inset, iw=w-inset*2, ih=h-inset*2;
+      ctx.save();
+      ctx.beginPath(); ctx.rect(ix,iy,iw,ih); ctx.clip();
+
+      const totalRot = ((cell.baseRot||0) + cell.rot) % 360;
+      const rotSwapped = (totalRot%180)!==0;
+      const baseW = rotSwapped?dims.h:dims.w, baseH = rotSwapped?dims.w:dims.h;
+      const scale = Math.max(iw/baseW, ih/baseH) * cell.zoom;
+      const drawW = dims.w*scale, drawH = dims.h*scale;
+      const cx = ix+iw/2 + cell.ox*iw, cy = iy+ih/2 + cell.oy*ih;
+      ctx.translate(cx,cy);
+      ctx.rotate(totalRot*Math.PI/180);
+      ctx.drawImage(img, -drawW/2, -drawH/2, drawW, drawH);
+      ctx.restore();
+      resolve();
+    };
+    img.onerror = ()=>resolve();
+    img.src = dataUrl;
+  });
+}
+
+/* ============================================================ BOOT */
+window.addEventListener('resize', ()=>{ if(state.view==='editor') layoutAllCells(); });
+setInterval(()=>{
+  document.querySelectorAll('.zm-expiry').forEach(el=>{ el.textContent = timeLeft(el.dataset.expires); });
+  updateSaveStatus();
+}, 60000);
+loadZines();
+</script>
+</body>
+</html>

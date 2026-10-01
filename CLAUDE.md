@@ -28,11 +28,16 @@ compose, save and share zines, while anyone can view the gallery.
 - Autofill reading order: front cover → pages 1–12 → back cover.
 - Horizontal photos rotate to fit a portrait cell by default, or can span 2 adjacent cells.
   Portrait photos can get an optional white border (starts at 2% of cell width).
-- Photo-only for now (no text elements). Metadata: title, date, description.
+- Text: only the front cover takes text boxes (`zine.coverTexts`, saved in `layout.coverTexts`).
+  Each box stores centre (cx, cy), width (w) and size as fractions of the cover panel, plus font
+  (Helvetica / Futura / Bodoni / Times New Roman, with Jost / Bodoni Moda / Tinos Google Fonts
+  fallbacks), alignment and one of 12 palette colours. PDF export and the gallery thumbnail
+  draw the text on canvas with the same font stacks and wrapping as the editor.
+- Metadata: title, date, description.
 
 ## Shipped features
 Photo tray with drag-and-drop into cells; per-cell pan/zoom/rotate/border/span; autofill;
-cell-to-cell swap via drag handle; in-app confirm dialog; re-center button; gallery landing
+cell-to-cell swap via drag handle; cover title text (drag to move, handles to resize, font/size/align/centre/colour, arrow-key nudge); in-app confirm dialog; re-center button; gallery landing
 grid (cover per zine → per-photo gallery view → PDF download); runtime host-theme detection;
 all CSS scoped under `#zm-app`.
 
